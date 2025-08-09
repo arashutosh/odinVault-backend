@@ -1,6 +1,6 @@
 import 'dotenv/config';
 import express from 'express';
-import cors from 'cors';
+import cors, { CorsOptions } from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
 import rateLimit from 'express-rate-limit';
@@ -43,15 +43,21 @@ const allowedOrigins = configuredOrigins.length > 0
   ? configuredOrigins
   : (process.env.NODE_ENV === 'production' ? defaultProdOrigins : defaultDevOrigins);
 
-app.use(cors({
+const corsOptions: CorsOptions = {
   origin: (origin, callback) => {
     // Allow non-browser requests or same-origin
     if (!origin) return callback(null, true);
     if (allowedOrigins.includes(origin)) return callback(null, true);
     return callback(new Error('Not allowed by CORS'));
   },
-  credentials: true
-}));
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+};
+
+// Apply CORS and explicitly handle preflight for all routes
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
 
 // Compression
 app.use(compression());
