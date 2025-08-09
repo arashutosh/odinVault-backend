@@ -1,0 +1,90 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  password      String?  // Optional for OAuth users
+  name          String?
+  googleId      String?  @unique // Google OAuth ID
+  googleEmail   String?  @unique // Google email (may differ from main email)
+  avatar        String?  // Google profile picture URL
+  emailVerified Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  files     File[]
+  shares    Share[]
+  tags      Tag[]
+
+  @@map("users")
+}
+
+model File {
+  id          String   @id @default(cuid())
+  name        String
+  originalName String
+  size        Int
+  mimeType    String
+  storageKey  String   @unique
+  previewKey  String?
+  tags        String[] // Array of tag strings
+  folder      String?  // Folder path
+  isDeleted   Boolean  @default(false)
+  deletedAt   DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  ownerId     String
+  owner       User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  shares      Share[]
+
+  @@index([ownerId])
+  @@index([isDeleted])
+  @@index([folder])
+  @@index([tags], type: Gin)
+  @@map("files")
+}
+
+model Share {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  expiresAt DateTime
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  // Relations
+  fileId    String
+  file      File     @relation(fields: [fileId], references: [id], onDelete: Cascade)
+  createdById String
+  createdBy User     @relation(fields: [createdById], references: [id], onDelete: Cascade)
+
+  @@index([token])
+  @@index([expiresAt])
+  @@map("shares")
+}
+
+model Tag {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  color     String?
+  createdAt DateTime @default(now())
+
+  // Relations
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("tags")
+}
