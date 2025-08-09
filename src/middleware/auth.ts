@@ -3,7 +3,13 @@ import jwt from 'jsonwebtoken';
 import { CustomError } from './errorHandler';
 import { prisma } from '../utils/database';
 
-export interface AuthRequest extends Request {
+export interface AuthRequest<
+    P = any,
+    ResBody = any,
+    ReqBody = any,
+    ReqQuery = any,
+    Locals extends Record<string, any> = Record<string, any>
+> extends Request<P, ResBody, ReqBody, ReqQuery, Locals> {
     user?: {
         id: string;
         email: string;
